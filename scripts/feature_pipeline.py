@@ -1,4 +1,5 @@
 from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import logging
@@ -7,6 +8,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 import pandas as pd
 import time
+
 LOG = logging.getLogger("feature_pipeline")
 
 try:
@@ -16,10 +18,12 @@ try:
     from src.feature_store.store_manager import StoreManager
 except Exception:
     # Allow imports to fail in environments where package paths are not configured
+    # We'll raise if these are actually needed at runtime.
     fetch_openmeteo_bulk = None  # type: ignore
     fetch_pollutant_historical = None  # type: ignore
     compute_pollutant_features = None  # type: ignore
     StoreManager = None  # type: ignore
+
 
 def _append_to_local_csv(features: Dict[str, Any], csv_path: Path):
     csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -28,8 +32,9 @@ def _append_to_local_csv(features: Dict[str, Any], csv_path: Path):
         df.to_csv(csv_path, index=False)
         LOG.info("Created local features CSV: %s", csv_path)
     else:
-    df.to_csv(csv_path, mode='a', index=False, header=False)
-    LOG.info("Appended row to local features CSV: %s", csv_path)
+        df.to_csv(csv_path, mode='a', index=False, header=False)
+        LOG.info("Appended row to local features CSV: %s", csv_path)
+
 
 def run_for_timestamp(
     ts_iso: str,
@@ -47,9 +52,9 @@ def run_for_timestamp(
     """Run feature extraction for a single timestamp.
 
     Args:
-    ts_iso: ISO timestamp string (e.g., 2024-10-14T12:00:00Z)
-    lat, lon: location
-    use_hopsworks: if True attempt to store to Hopsworks, otherwise write local csv
+        ts_iso: ISO timestamp string (e.g., 2024-10-14T12:00:00Z)
+        lat, lon: location
+        use_hopsworks: if True attempt to store to Hopsworks, otherwise write local csv
     Returns:
         features dict
     """
@@ -61,12 +66,13 @@ def run_for_timestamp(
 
     # 1) Fetch pollutant data (closest to timestamp)
     poll = fetch_pollutant_historical(
-    api_key=openweather_api_key or os.getenv("OPENWEATHER_API_KEY"),
-    base_url=openweather_base_url,
-    lat=lat,
+        api_key=openweather_api_key or os.getenv("OPENWEATHER_API_KEY"),
+        base_url=openweather_base_url,
+        lat=lat,
         lon=lon,
         dt_unix=ts_unix,
     )
+
     # 2) Fetch weather data for that date (Open-Meteo daily archive, use same day)
     date_str = ts.strftime("%Y-%m-%d")
     try:
@@ -90,9 +96,9 @@ def run_for_timestamp(
                 df_hist = df_hist[df_hist['timestamp'] < ts]
                 # keep last 7 days
                 df_hist = df_hist.sort_values('timestamp').tail(7 * 24)
-        hist = df_hist.to_dict('records')
-    except Exception:
-        LOG.exception("Failed to read local history for rolling features")
+                hist = df_hist.to_dict('records')
+        except Exception:
+            LOG.exception("Failed to read local history for rolling features")
 
     # Compute pollutant features (includes change rates if historical provided)
     features = compute_pollutant_features(raw, historical_data=hist)
@@ -120,9 +126,9 @@ def run_for_timestamp(
 
     # Store features
     if use_hopsworks or (os.getenv('HOPSWORKS_API_KEY') and os.getenv('HOPSWORKS_PROJECT_NAME')):
-    api_key = hopsworks_api_key or os.getenv('HOPSWORKS_API_KEY')
-    project = hopsworks_project or os.getenv('HOPSWORKS_PROJECT_NAME')
-    try:
+        api_key = hopsworks_api_key or os.getenv('HOPSWORKS_API_KEY')
+        project = hopsworks_project or os.getenv('HOPSWORKS_PROJECT_NAME')
+        try:
             sm = StoreManager(api_key=api_key, project_name=project)
             sm.store_features(features=features, name=features_fg_name, version=2, primary_key=['timestamp'], event_time='timestamp')
             LOG.info("Stored features to Hopsworks feature group %s", features_fg_name)
@@ -134,6 +140,7 @@ def run_for_timestamp(
 
     return features
 
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Feature pipeline for a single timestamp")
     parser.add_argument("--ts", required=True, help="ISO timestamp (e.g., 2024-10-14T12:00:00Z)")
@@ -142,28 +149,23 @@ def main(argv=None):
     parser.add_argument("--use-hopsworks", action='store_true')
     parser.add_argument("--local-csv", default="data/features_local.csv")
     args = parser.parse_args(argv)
+
     logging.basicConfig(level=logging.INFO)
     LOG.info("Running feature pipeline ts=%s lat=%s lon=%s", args.ts, args.lat, args.lon)
 
     features = run_for_timestamp(
-    ts_iso=args.ts,
-    lat=args.lat,
-    lon=args.lon,
+        ts_iso=args.ts,
+        lat=args.lat,
+        lon=args.lon,
         use_hopsworks=args.use_hopsworks,
         local_csv=args.local_csv,
     )
+
     LOG.info("Feature extraction complete. Keys: %s", list(features.keys()))
 
 
 if __name__ == "__main__":
     main()
-
-from __future__ import annotations
-
-import argparse
-import logging
-import os
-from pathlib import Path
 from typing import Optional, Dict, Any
 import pandas as pd
 import time
