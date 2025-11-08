@@ -21,26 +21,24 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Unpack AQIDASHBOARD secret
-        # This step parses the JSON value stored in the AQIDASHBOARD secret and
-        # writes individual key=value lines into $GITHUB_ENV so subsequent steps
-        # can access them as normal environment variables (e.g., HOPSWORKS_API_KEY).
+      - name: Unpack AQIDASHBOARD secret (raw)
+        # Treat the AQIDASHBOARD secret as a raw single-value secret.
+        # Export it as AQIDASHBOARD_RAW and, for compatibility, set
+        # HOPSWORKS_API_KEY to the same value unless HOPSWORKS_API_KEY
+        # was already provided separately.
         run: |
-          if [ -n "$SECRET_JSON" ]; then
-            python - <<'PY'
-import os, json
-s = os.getenv('SECRET_JSON', '')
-if s:
-    data = json.loads(s)
-    github_env = os.getenv('GITHUB_ENV')
-    with open(github_env, 'a') as f:
-        for k, v in data.items():
-            # ensure values are strings and avoid newlines
-            f.write(f"{k}={str(v).replace('\n','')}\n")
-print('Unpacked AQIDASHBOARD secret')
-PY
-          else
+          if [ -z "$SECRET_JSON" ]; then
             echo "No AQIDASHBOARD secret provided; continuing without secret-based env vars"
+            exit 0
+          fi
+          # Export the raw secret for downstream steps
+          echo "AQIDASHBOARD_RAW=$SECRET_JSON" >> $GITHUB_ENV
+          # If HOPSWORKS_API_KEY is not set, map it from the raw secret
+          if [ -z "${HOPSWORKS_API_KEY:-}" ]; then
+            echo "HOPSWORKS_API_KEY=$SECRET_JSON" >> $GITHUB_ENV
+            echo "Mapped AQIDASHBOARD -> HOPSWORKS_API_KEY"
+          else
+            echo "HOPSWORKS_API_KEY already set; not overwriting"
           fi
 
       - name: Install dependencies (CI-safe)
