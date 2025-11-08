@@ -26,8 +26,5 @@ jobs:
           HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
         run: |
           python -c "from datetime import datetime; print(datetime.utcnow().isoformat())"
-          python scripts/feature_pipeline.py --ts "$(python - <<'PY'
-from datetime import datetime
-print(datetime.utcnow().isoformat()+"Z")
-PY
-)" --lat 24.86 --lon 67.00 --use-hopsworks
+          # Use date -u to emit an RFC3339 UTC timestamp rather than a nested heredoc
+          python scripts/feature_pipeline.py --ts "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" --lat 24.86 --lon 67.00 --use-hopsworks
