@@ -1,0 +1,28 @@
+openweather:
+  api_key: ${OPENWEATHER_API_KEY}
+  base_url: "https://api.openweathermap.org/data/2.5"
+  air_pollution_url: "https://api.openweathermap.org/data/2.5/air_pollution"
+
+location:
+  lat: ${LOCATION_LAT}
+  lon: ${LOCATION_LON}
+  city: ${LOCATION_CITY}
+
+hopsworks:
+  api_key: ${HOPSWORKS_API_KEY}
+  project_name: ${HOPSWORKS_PROJECT_NAME}
+
+feature_groups:
+  weather:
+    name: "weather_features"
+    version: 2
+    primary_key: ["timestamp"]
+    event_time: "timestamp"
+  pollutant:
+    name: "pollutant_features"
+    version: 2
+    primary_key: ["timestamp"]
+    event_time: "timestamp"
+
+schedule:
+  interval_minutes: 60

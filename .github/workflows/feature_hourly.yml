@@ -1,0 +1,49 @@
+name: Hourly feature pipeline
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: hourly-feature-pipeline
+  cancel-in-progress: true
+
+jobs:
+  run-features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run hourly feature pipeline
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+          HOPSWORKS_PROJECT: ${{ secrets.HOPSWORKS_PROJECT }}
+        run: |
+          if [ -f scripts/backfill_features.py ]; then
+            python scripts/backfill_features.py --hours 1
+          elif [ -f run_hourly_backfill.py ]; then
+            python run_hourly_backfill.py
+          elif [ -f src/main.py ]; then
+            python src/main.py --mode features --hours 1
+          else
+            echo "No known feature entrypoint found. Please update this workflow to call your script."
+            exit 1
+          fi

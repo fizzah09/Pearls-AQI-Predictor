@@ -1,0 +1,53 @@
+name: Daily training pipeline
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: daily-training-pipeline
+  cancel-in-progress: true
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run training pipeline
+        env:
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+          HOPSWORKS_PROJECT: ${{ secrets.HOPSWORKS_PROJECT }}
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        run: |
+          if [ -f modeling/train_pipeline.py ]; then
+            python modeling/train_pipeline.py --data data/ml_training_data_1year.csv
+          elif [ -f modeling/train_and_eval.py ]; then
+            python modeling/train_and_eval.py --use-feature-store
+          else
+            echo "No known training entrypoint found. Please update this workflow to call your script."
+            exit 1
+          fi
+
+      - name: Upload trained models as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-models
+          path: modeling/models/*.pkl

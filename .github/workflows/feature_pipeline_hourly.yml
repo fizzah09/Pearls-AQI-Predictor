@@ -1,0 +1,33 @@
+name: Feature pipeline hourly
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  run-feature-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run feature pipeline for now (UTC)
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          OPENWEATHER_BASE_URL: ${{ secrets.OPENWEATHER_BASE_URL }}
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+          HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
+        run: |
+          python -c "from datetime import datetime; print(datetime.utcnow().isoformat())"
+          python scripts/feature_pipeline.py --ts "$(python - <<'PY'
+from datetime import datetime
+print(datetime.utcnow().isoformat()+"Z")
+PY
+)" --lat 24.86 --lon 67.00 --use-hopsworks
