@@ -3,7 +3,7 @@
 on:
   schedule:
     - cron: '0 * * * *'  #  Runs every hour (UTC)
-S  workflow_dispatch:       # Manual trigger if needed
+  workflow_dispatch:       # Manual trigger if needed
 
 jobs:
   update_features:
