@@ -50,8 +50,9 @@ def backfill(start_iso: str, end_iso: str, freq: str = "daily", lat: float = 0.0
 
 def main(argv=None):
     parser = argparse.ArgumentParser("Backfill feature store")
-    parser.add_argument("--start", required=True, help="Start ISO date e.g. 2024-01-01T00:00:00Z")
-    parser.add_argument("--end", required=True, help="End ISO date")
+    parser.add_argument("--start", help="Start ISO date e.g. 2024-01-01T00:00:00Z")
+    parser.add_argument("--end", help="End ISO date")
+    parser.add_argument("--hours", type=int, help="Backfill the last N hours (alternative to --start/--end)")
     parser.add_argument("--freq", choices=["daily", "hourly"], default="daily")
 
     lat_env = os.getenv("LAT")
@@ -62,6 +63,28 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO)
+
+    # If --hours is provided, compute start/end based on current UTC time
+    if args.hours is not None:
+        now = datetime.utcnow()
+        if args.freq == "daily":
+            # Interpret hours as days when freq=daily: backfill last N days
+            end_dt = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            start_dt = end_dt - timedelta(days=(args.hours - 1))
+        else:
+            # hourly: backfill last N hours up to the previous completed hour
+            end_dt = (now - timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+            start_dt = end_dt - timedelta(hours=(args.hours - 1))
+
+        start_iso = start_dt.replace(tzinfo=None).isoformat() + "Z"
+        end_iso = end_dt.replace(tzinfo=None).isoformat() + "Z"
+        LOG.info("Computed start=%s end=%s from --hours=%s freq=%s", start_iso, end_iso, args.hours, args.freq)
+        backfill(start_iso, end_iso, args.freq, lat=args.lat, lon=args.lon, use_hopsworks=args.use_hopsworks)
+        return
+
+    if not args.start or not args.end:
+        parser.error("You must provide either --hours or both --start and --end")
+
     backfill(args.start, args.end, args.freq, lat=args.lat, lon=args.lon, use_hopsworks=args.use_hopsworks)
 
 
