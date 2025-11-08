@@ -45,4 +45,8 @@ jobs:
           fi
 
       - name: Run feature ingestion
-        run: python scripts/feature_pipeline.py
+        run: |
+          # Run for the previous hour (UTC) to ensure data is available
+          TS=$(date -u -d '1 hour ago' +%Y-%m-%dT%H:00:00Z)
+          echo "Running feature pipeline for timestamp=$TS lat=${LOCATION_LAT} lon=${LOCATION_LON}"
+          python scripts/feature_pipeline.py --ts "$TS" --lat ${LOCATION_LAT} --lon ${LOCATION_LON}
