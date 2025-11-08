@@ -1,31 +1,65 @@
-name: Feature pipeline hourly
+﻿name: Feature Ingestion Pipeline
 
 on:
   schedule:
-    - cron: '0 * * * *'
-  workflow_dispatch: {}
+    - cron: '0 * * * *'  #  Runs every hour (UTC)
+  workflow_dispatch:       # Manual trigger if needed
 
 jobs:
-  run-feature-pipeline:
+  update_features:
     runs-on: ubuntu-latest
+    # The repository stores multiple secrets in a single secret named AQIDASHBOARD
+    # We unpack that JSON blob at runtime into environment variables for later steps.
+    env:
+      SECRET_JSON: ${{ secrets.AQIDASHBOARD }}
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          # Use Python 3.10 because hopsworks/hsml wheels are not available for 3.11 on the runner
           python-version: '3.10'
-      - name: Install dependencies
+
+      - name: Unpack AQIDASHBOARD secret
+        # This step parses the JSON value stored in the AQIDASHBOARD secret and
+        # writes individual key=value lines into $GITHUB_ENV so subsequent steps
+        # can access them as normal environment variables (e.g., HOPSWORKS_API_KEY).
+        run: |
+          if [ -n "$SECRET_JSON" ]; then
+            python - <<'PY'
+import os, json
+s = os.getenv('SECRET_JSON', '')
+if s:
+    data = json.loads(s)
+    github_env = os.getenv('GITHUB_ENV')
+    with open(github_env, 'a') as f:
+        for k, v in data.items():
+            # ensure values are strings and avoid newlines
+            f.write(f"{k}={str(v).replace('\n','')}\n")
+print('Unpacked AQIDASHBOARD secret')
+PY
+          else
+            echo "No AQIDASHBOARD secret provided; continuing without secret-based env vars"
+          fi
+
+      - name: Install dependencies (CI-safe)
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Run feature pipeline for now (UTC)
-        env:
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          OPENWEATHER_BASE_URL: ${{ secrets.OPENWEATHER_BASE_URL }}
-          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-          HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
+          if [ -f requirements-ci.txt ]; then pip install -r requirements-ci.txt; else pip install pyarrow pandas joblib matplotlib seaborn statsmodels; fi
+
+      - name: Install hopsworks (optional)
         run: |
-          python -c "from datetime import datetime; print(datetime.utcnow().isoformat())"
-          # Use date -u to emit an RFC3339 UTC timestamp rather than a nested heredoc
-          python scripts/feature_pipeline.py --ts "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" --lat 24.86 --lon 67.00 --use-hopsworks
+          # Install hopsworks only if HOPSWORKS_API_KEY is available (unpacked from AQIDASHBOARD)
+          if [ -n "${HOPSWORKS_API_KEY:-}" ]; then
+            python -m pip install --upgrade pip
+            pip install "hopsworks==4.2.*"
+          else
+            echo "HOPSWORKS_API_KEY not set; skipping hopsworks install"
+          fi
+
+      - name: Run feature ingestion script
+        run: |
+          # If the secret provided OPENWEATHER/other keys, they are available as env vars now.
+          # Adjust the invocation and flags here as needed.
+          python scripts/feature_pipeline.py --lat 24.86 --lon 67.00
