@@ -36,7 +36,11 @@ jobs:
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-          HOPSWORKS_PROJECT: ${{ secrets.HOPSWORKS_PROJECT }}
+          HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
+          HOPSWORKS_PROJECT: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
+          LOCATION_LAT: 24.8607
+          LOCATION_LON: 67.0011
+          LOCATION_CITY: Karachi
         run: |
           if [ -f scripts/backfill_features.py ]; then
             python scripts/backfill_features.py --hours 1
