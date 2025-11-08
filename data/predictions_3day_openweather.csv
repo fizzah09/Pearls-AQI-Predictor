@@ -1,0 +1,4 @@
+date,aqi_pred,category,level,color,message,near_extreme_neighbor,nn_min_distance
+2025-11-08,167.6,Unhealthy,4,#ff0000,Some members of the general public may experience health effects.,True,11181.493967230514
+2025-11-09,169.88,Unhealthy,4,#ff0000,Some members of the general public may experience health effects.,True,11181.494248338062
+2025-11-10,169.2,Unhealthy,4,#ff0000,Some members of the general public may experience health effects.,True,11181.493871802439

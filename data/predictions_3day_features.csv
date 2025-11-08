@@ -1,0 +1,4 @@
+hour,day,month,year,weekday,is_weekend,temperature,feels_like,temp_min,temp_max,pressure,humidity,visibility,wind_speed,wind_deg,clouds,temp_range,pollutant_co,pollutant_no,pollutant_no2,pollutant_o3,pollutant_so2,pollutant_pm2_5,pollutant_pm10,pollutant_nh3,pollutant_pm_ratio,pollutant_nox_total,pollutant_aqi_change_rate,pollutant_pm2_5_change_rate,season_spring,season_summer,season_winter,weather_main_Clouds,weather_main_Rain
+12,8,11,0,5,0,24.9,,19.7,30.1,,,0,13.8,288,0,0,1268.39,0.54,53.47,87.98,52.45,49.25,82.94,12.03,0.594,54.01,0.0,0.0,0,0,0,0,0
+12,9,11,0,6,0,23.65,,19.0,28.3,,,0,12.7,250,6,0,1268.39,0.54,53.47,87.98,52.45,49.25,82.94,12.03,0.594,54.01,0.0,0.0,0,0,0,0,0
+12,10,11,0,0,0,23.1,,18.6,27.6,,,0,13.1,231,22,0,1268.39,0.54,53.47,87.98,52.45,49.25,82.94,12.03,0.594,54.01,0.0,0.0,0,0,0,0,0
