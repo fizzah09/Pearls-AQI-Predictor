@@ -1,3 +1,4 @@
+---
 name: Daily training pipeline
 
 on:
@@ -18,8 +19,9 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          # training requires hopsworks/hsml which currently have limited support on 3.11,
-          # use 3.10 so binary wheels are available on the runner.
+          # training requires hopsworks/hsml which currently have
+          # limited support on Python 3.11; use 3.10 so binary
+          # wheels are available on the runner.
           python-version: '3.10'
 
       - name: Cache pip
@@ -31,12 +33,14 @@ jobs:
       - name: Install dependencies (CI reduced requirements)
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements-ci.txt ]; then pip install -r requirements-ci.txt; fi
+          if [ -f requirements-ci.txt ]; then \
+            pip install -r requirements-ci.txt; \
+          fi
 
       - name: Run training pipeline
         env:
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-          HOPSWORKS_PROJECT: ${{ secrets.HOPSWORKS_PROJECT }}
+          HOPSWORKS_PROJECT: ${{ secrets.HOPSWORKS_PROJECT_NAME}}
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
         run: |
           if [ -f modeling/train_pipeline.py ]; then
