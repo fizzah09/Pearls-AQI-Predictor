@@ -7,12 +7,7 @@ on:
 
 jobs:
   update_features:
-    name: Feature Ingestion Pipeline
     runs-on: ubuntu-latest
-    env:
-      # Provide both; mapping step below will copy AQIDASHBOARD -> HOPSWORKS_API_KEY when needed
-      HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-      AQIDASHBOARD: ${{ secrets.AQIDASHBOARD }}
 
     steps:
       - uses: actions/checkout@v3
@@ -22,73 +17,11 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Upgrade pip and install CI requirements
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements-ci.txt ]; then pip install -r requirements-ci.txt; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Map AQIDASHBOARD -> HOPSWORKS_API_KEY (if needed)
-        run: |
-          # If HOPSWORKS_API_KEY isn't set but AQIDASHBOARD is, expose it for later steps
-          if [ -z "${HOPSWORKS_API_KEY}" ] && [ -n "${AQIDASHBOARD}" ]; then
-            echo "HOPSWORKS_API_KEY=${AQIDASHBOARD}" >> $GITHUB_ENV
-          fi
-        env:
-          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-          AQIDASHBOARD: ${{ secrets.AQIDASHBOARD }}
-
-      - name: Install hopsworks (optional)
-        if: ${{ secrets.AQIDASHBOARD != '' || secrets.HOPSWORKS_API_KEY != '' }}
-        run: |
-          python -m pip install "hopsworks==4.2.*"
-
-      - name: Run feature ingestion script
+      - name: Run feature ingestion
         run: python scripts/feature_pipeline.py
-name: Feature Ingestion Pipeline
-
-on:
-  schedule:
-    - cron: '0 * * * *'  #  Runs every hour (UTC)
-  workflow_dispatch:       # Manual trigger if needed
-
-jobs:
-  name: Feature Ingestion Pipeline
-
-  on:
-    schedule:
-      - cron: '0 * * * *'  #  Runs every hour (UTC)
-    workflow_dispatch:       # Manual trigger if needed
-
-  jobs:
-    update_features:
-      runs-on: ubuntu-latest
-      # The repository stores multiple secrets in a single secret named AQIDASHBOARD
-      # We unpack that JSON blob at runtime into environment variables for later steps.
-      name: Feature Ingestion Pipeline
-
-      on:
-        schedule:
-          - cron: '0 * * * *'  # ⏰ Runs every hour (UTC)
-        workflow_dispatch:       # Manual trigger if needed
-
-      jobs:
-        update_features:
-          runs-on: ubuntu-latest
-          env:
-            HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-
-          steps:
-            - uses: actions/checkout@v3
-
-            - name: Set up Python
-              uses: actions/setup-python@v4
-              with:
-                python-version: '3.10'
-
-            - name: Install dependencies
-              run: |
-                python -m pip install --upgrade pip
-                pip install "hopsworks==4.2.*" pyarrow pandas joblib matplotlib seaborn statsmodels
-
-            - name: Run feature ingestion script
-              run: python feature_pipeline.py
+          python -m pip install --upgrade pip
