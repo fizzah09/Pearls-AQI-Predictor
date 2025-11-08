@@ -1,9 +1,10 @@
-﻿name: Feature Ingestion Pipeline
+﻿---
+name: Feature Ingestion Pipeline
 
 on:
   schedule:
     - cron: '0 * * * *'  # Runs every hour (UTC)
-  workflow_dispatch:    # Manual trigger if needed
+  workflow_dispatch: {}  # Manual trigger (explicit empty mapping to satisfy yamllint)
 
 jobs:
   update_features:
