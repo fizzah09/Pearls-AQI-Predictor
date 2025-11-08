@@ -1,0 +1,111 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual envs
+venv/
+env/
+/.venv
+
+# Editor settings
+.vscode/
+.idea/
+
+# Backups and generated files
+*.bak
+backups/
+archived/
+
+# Environment files
+.env
+env.*
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Streamlit
+*.db
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Data
+data/*.csv
+!data/.gitkeep
+
+# Backups and archives
+backups/
+archived/
+*.bak
+
+# Models
+modeling/models/*.pkl
+modeling/models/*.joblib
+!modeling/models/.gitkeep
+
+# Evaluation
+modeling/evaluation/*.png
+modeling/evaluation/*.csv
+!modeling/evaluation/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Hopsworks
+hopsworks_verification_report.json
+training_report.json
+
+# CI/CD artifacts
+*.artifact
