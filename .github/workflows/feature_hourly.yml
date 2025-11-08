@@ -42,13 +42,7 @@ jobs:
           LOCATION_LON: 67.0011
           LOCATION_CITY: Karachi
         run: |
-          if [ -f scripts/backfill_features.py ]; then
-            python scripts/backfill_features.py --hours 1
-          elif [ -f run_hourly_backfill.py ]; then
-            python run_hourly_backfill.py
-          elif [ -f src/main.py ]; then
-            python src/main.py --mode features --hours 1
-          else
-            echo "No known feature entrypoint found. Please update this workflow to call your script."
-            exit 1
-          fi
+          # Run for the previous hour (UTC) to ensure data is available
+          TS=$(date -u -d '1 hour ago' +%Y-%m-%dT%H:00:00Z)
+          echo "Running feature pipeline for timestamp=$TS lat=${LOCATION_LAT} lon=${LOCATION_LON}"
+          python scripts/feature_pipeline.py --ts "$TS" --lat ${LOCATION_LAT} --lon ${LOCATION_LON}
