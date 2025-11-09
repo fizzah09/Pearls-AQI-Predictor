@@ -8,6 +8,11 @@
 **Predicting Air Quality Index (AQI) using Machine Learning and real-time weather data**
 
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/fizzah09/Pearls-AQI-Predictor/main/Screenshot%202025-11-09%20163759.png" width="700" alt="Dashboard Screenshot">
+</p>
+
+
 
 Pearls-AQI-Predictor is a Python project that predicts AQI for cities using weather and pollutant data. It integrates **Hopsworks Feature Store**, provides a **FastAPI backend**, and a **Streamlit dashboard** for visualization. The project leverages **XGBoost** for modeling, implements **explainability tools**, and is designed for real-time predictions and easy deployment.
 
