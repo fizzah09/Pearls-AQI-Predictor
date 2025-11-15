@@ -1,36 +1,27 @@
 import logging
 
+import pandas as pd
 
-"""
-modeling.data_loader
----------------------
-
-Utilities to load the training CSV, parse timestamps robustly, and
-prepare features and targets for modeling.
-
-This file provides:
-- `load_training_data(csv_path)` -> DataFrame
-- `prepare_features_targets(df, target_col)` -> (X, y)
-- `get_feature_importance_names(X)` -> List[str]
-"""
-
-import logging
 from pathlib import Path
+
 from typing import Tuple, List, Optional
 
-import pandas as pd
 
 log = logging.getLogger(__name__)
 
 
 def load_training_data(csv_path: str) -> pd.DataFrame:
-    """Load the CSV and ensure `timestamp` is parsed to UTC datetimes.
+    """Load training data from CSV file.
 
-    The loader handles epoch-second integers/floats and ISO-formatted
-    strings. Rows with unparseable timestamps are dropped.
+    Args:
+        csv_path: Path to CSV file with historical features.
+
+    Returns:
+        DataFrame with parsed timestamps (UTC) and cleaned rows.
     """
 
     log.info("Loading training data from: %s", csv_path)
+
     if not Path(csv_path).exists():
         raise FileNotFoundError(f"Training data not found: {csv_path}")
 
@@ -39,10 +30,14 @@ def load_training_data(csv_path: str) -> pd.DataFrame:
     if 'timestamp' in df.columns:
         ts = df['timestamp']
         try:
+            # Numeric epoch seconds (int/float) -> convert with unit='s'
             if pd.api.types.is_integer_dtype(ts) or pd.api.types.is_float_dtype(ts):
                 df['timestamp'] = pd.to_datetime(ts, unit='s', utc=True)
             else:
+                # First try flexible parsing of common ISO formats
                 parsed = pd.to_datetime(ts, utc=True, errors='coerce', infer_datetime_format=True)
+
+                # If many values failed to parse, try converting numeric-looking strings as epoch seconds
                 num_failed = parsed.isna().sum()
                 if num_failed > 0 and num_failed > 0.1 * len(parsed):
                     as_num = pd.to_numeric(ts, errors='coerce')
@@ -53,35 +48,53 @@ def load_training_data(csv_path: str) -> pd.DataFrame:
                 else:
                     df['timestamp'] = parsed
         except Exception:
+            # Fallback: best-effort parse
             df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce', utc=True)
 
+        # Drop rows with unparseable timestamps and warn
         null_ts = df['timestamp'].isna().sum()
         if null_ts > 0:
             log.warning("Found %d unparseable timestamps; dropping those rows", null_ts)
             df = df[~df['timestamp'].isna()]
 
-    log.info("Loaded %d rows, %d columns", len(df), len(df.columns))
+    log.info(" Loaded %d rows, %d columns", len(df), len(df.columns))
+
+    # Safely report date range if timestamp exists
+    if 'timestamp' in df.columns and not df['timestamp'].empty:
+        try:
+            log.info("Date range: %s to %s", df['timestamp'].min(), df['timestamp'].max())
+        except Exception:
+            log.debug("Could not determine date range for timestamps")
+
     return df
 
 
 def prepare_features_targets(
     df: pd.DataFrame,
     target_col: str = 'pollutant_aqi',
-    drop_cols: Optional[List[str]] = None,
+    drop_cols: Optional[List[str]] = None
 ) -> Tuple[pd.DataFrame, pd.Series]:
-    """Return (X, y) where X contains model features and y the target series.
+    """Separate features (X) from target (y).
 
-    Drops common metadata columns by default. Encodes object dtypes
-    with one-hot encoding and fills numeric NaNs with median.
+    Args:
+        df: Input DataFrame
+        target_col: Column name for prediction target
+        drop_cols: Additional columns to drop from features
+
+    Returns:
+        Tuple of (X, y)
     """
     if target_col not in df.columns:
         raise ValueError(f"Target column '{target_col}' not found in DataFrame")
 
     default_drop = ['timestamp', 'city_name', 'country', 'weather_description', 'pollutant_aqi_category']
+
     if drop_cols:
         default_drop.extend(drop_cols)
 
-    cols_to_drop = [c for c in default_drop if c in df.columns]
+    cols_to_drop = [col for col in default_drop if col in df.columns]
+    cols_to_drop = list(set(cols_to_drop))
+
     X = df.drop(columns=[target_col] + cols_to_drop)
     y = df[target_col]
 
@@ -100,42 +113,25 @@ def prepare_features_targets(
         X = X[valid_idx]
         y = y[valid_idx]
 
-    log.info("Features shape: %s", X.shape)
-    log.info("Target shape: %s", y.shape)
+    log.info(" Features shape: %s", X.shape)
+    log.info(" Target shape: %s", y.shape)
+    log.info("Feature columns: %s", list(X.columns))
+
     return X, y
 
 
 def get_feature_importance_names(X: pd.DataFrame) -> List[str]:
-    """Return feature column names for plotting importance."""
+    """Get feature names for importance plotting."""
     return list(X.columns)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    df = load_training_data('../data/ml_training_data_1year.csv')
-    X, y = prepare_features_targets(df, target_col='pollutant_aqi')
-    print(f"Dataset ready for modeling: Features={X.shape}, Target={y.shape}")
-    
-
 
     df = load_training_data("../data/ml_training_data_1year.csv")
-
-
     X, y = prepare_features_targets(df, target_col='pollutant_aqi')
 
-
-    
-
-
     print(f"\nDataset ready for modeling:")
-
-
     print(f"  Features: {X.shape}")
-
-
     print(f"  Target: {y.shape}")
-
-
     print(f"  Target distribution:\n{y.value_counts().sort_index()}")
-
-
