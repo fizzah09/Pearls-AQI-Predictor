@@ -1,4 +1,4 @@
 date,aqi_pred,category,level,color,message,near_extreme_neighbor,nn_min_distance
-2025-11-08,167.6,Unhealthy,4,#ff0000,Some members of the general public may experience health effects.,True,11181.493967230514
-2025-11-09,169.88,Unhealthy,4,#ff0000,Some members of the general public may experience health effects.,True,11181.494248338062
-2025-11-10,169.2,Unhealthy,4,#ff0000,Some members of the general public may experience health effects.,True,11181.493871802439
+2025-11-11,71.41,Moderate,2,#ffff00,"Air quality is acceptable. However, there may be a risk for some people.",True,10967.567571757267
+2025-11-12,81.27,Moderate,2,#ffff00,"Air quality is acceptable. However, there may be a risk for some people.",True,10967.567493241704
+2025-11-13,80.76,Moderate,2,#ffff00,"Air quality is acceptable. However, there may be a risk for some people.",True,10967.56739909368
